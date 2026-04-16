@@ -1,6 +1,7 @@
 name: 自动化报告
 
 on:
+  workflow_call:  # 支持被其他仓库复用调用
   push:
     branches: [main]
   pull_request:
