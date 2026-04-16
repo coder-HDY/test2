@@ -2,6 +2,12 @@ name: 自动化报告
 
 on:
   workflow_call:  # 支持被其他仓库复用调用
+    inputs:
+      repo_name:
+        description: 要显示在报告标题中的仓库名
+        required: false
+        type: string
+        default: coder-HDY/test2
   push:
     branches: [main]
   pull_request:
@@ -15,6 +21,8 @@ jobs:
   generate-report:
     name: 生成报告
     runs-on: ubuntu-latest
+    env:
+      REPORT_REPO_NAME: ${{ inputs.repo_name || github.repository }}
 
     steps:
       - name: 检出代码
@@ -37,6 +45,7 @@ jobs:
           echo "║              📊 自动化项目报告                   ║"
           echo "╚══════════════════════════════════════════════════╝"
           echo ""
+          echo "🧾 报告标题:   ${REPORT_REPO_NAME} 工作流报告"
           echo "🗓  报告时间:   $(date '+%Y-%m-%d %H:%M:%S UTC')"
           echo "📁 仓库名称:   ${{ github.repository }}"
           echo "🌿 当前分支:   $BRANCH"
