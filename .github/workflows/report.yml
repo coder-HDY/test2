@@ -1,0 +1,69 @@
+name: 自动化报告
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 每天 UTC 00:00 自动运行
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  generate-report:
+    name: 生成报告
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 收集仓库信息
+        id: repo-info
+        run: |
+          echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "COMMIT_MSG=$(git log -1 --pretty=%s)" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
+          echo "COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+          echo "TOTAL_COMMITS=$(git rev-list --count HEAD)" >> $GITHUB_ENV
+          echo "TOTAL_FILES=$(git ls-files | wc -l | tr -d ' ')" >> $GITHUB_ENV
+          echo "BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+      - name: 打印报告
+        run: |
+          echo "╔══════════════════════════════════════════════════╗"
+          echo "║              📊 自动化项目报告                   ║"
+          echo "╚══════════════════════════════════════════════════╝"
+          echo ""
+          echo "🗓  报告时间:   $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "📁 仓库名称:   ${{ github.repository }}"
+          echo "🌿 当前分支:   $BRANCH"
+          echo ""
+          echo "──────────────────────────────────────────────────"
+          echo "  최近 提交信息"
+          echo "──────────────────────────────────────────────────"
+          echo "  🔖 Commit SHA:    $COMMIT_SHA"
+          echo "  📝 提交信息:      $COMMIT_MSG"
+          echo "  👤 提交者:        $COMMIT_AUTHOR"
+          echo "  🕐 提交时间:      $COMMIT_DATE"
+          echo ""
+          echo "──────────────────────────────────────────────────"
+          echo "  📈 统计信息"
+          echo "──────────────────────────────────────────────────"
+          echo "  📦 总提交次数:    $TOTAL_COMMITS"
+          echo "  🗂  追踪文件数:    $TOTAL_FILES"
+          echo "  🤖 触发方式:      ${{ github.event_name }}"
+          echo "  🏃 运行编号:      #${{ github.run_number }}"
+          echo ""
+          echo "──────────────────────────────────────────────────"
+          echo "  📋 文件列表"
+          echo "──────────────────────────────────────────────────"
+          git ls-files | while read f; do
+            size=$(wc -c < "$f" 2>/dev/null || echo 0)
+            echo "  📄 $f  (${size} bytes)"
+          done
+          echo ""
+          echo "══════════════════════════════════════════════════"
+          echo "  ✅ 报告生成完成"
+          echo "══════════════════════════════════════════════════"
