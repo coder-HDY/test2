@@ -1,0 +1,91 @@
+# ============================================================
+# 【仓库1 专用】这是源模板，存放在控制仓库，不直接运行。
+# 分发脚本读取此文件，生成目标仓库本地运行的独立版本。
+# 生成时会自动移除 workflow_call 触发器，其余内容不变。
+# ============================================================
+name: 自动化报告
+
+on:
+# __WORKFLOW_CALL_START__
+  workflow_call:
+    inputs:
+      repo_name:
+        description: 要显示在报告标题中的仓库名
+        required: false
+        type: string
+        default: coder-HDY/test2
+# __WORKFLOW_CALL_END__
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 每天 UTC 00:00 自动运行
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  generate-report:
+    name: 生成报告
+    runs-on: ubuntu-latest
+    env:
+      REPORT_REPO_NAME: ${{ inputs.repo_name || github.repository }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 收集仓库信息
+        id: repo-info
+        run: |
+          echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "COMMIT_MSG=$(git log -1 --pretty=%s)" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
+          echo "COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+          echo "TOTAL_COMMITS=$(git rev-list --count HEAD)" >> $GITHUB_ENV
+          echo "TOTAL_FILES=$(git ls-files | wc -l | tr -d ' ')" >> $GITHUB_ENV
+          echo "BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+      - name: 生成 Summary 报告
+        run: |
+          # 同时写入 Job Summary（在 Actions Summary 页面可见）
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 📊 自动化项目报告
+
+          | 项目 | 内容 |
+          |------|------|
+          | 🗓 报告时间 | $(date '+%Y-%m-%d %H:%M:%S UTC') |
+          | 📁 仓库名称 | ${{ github.repository }} |
+          | 🌿 当前分支 | ${BRANCH} |
+          | 🤖 触发方式 | ${{ github.event_name }} |
+          | 🏃 运行编号 | #${{ github.run_number }} |
+
+          ### 📝 最近提交
+
+          | 项目 | 内容 |
+          |------|------|
+          | 🔖 Commit SHA | \`${COMMIT_SHA}\` |
+          | 📝 提交信息 | ${COMMIT_MSG} |
+          | 👤 提交者 | ${COMMIT_AUTHOR} |
+          | 🕐 提交时间 | ${COMMIT_DATE} |
+
+          ### 📈 统计信息
+
+          | 项目 | 数值 |
+          |------|------|
+          | 📦 总提交次数 | ${TOTAL_COMMITS} |
+          | 🗂 追踪文件数 | ${TOTAL_FILES} |
+
+          ### 📋 文件列表
+
+          | 文件 | 大小 |
+          |------|------|
+          $(git ls-files | while read f; do
+            size=$(wc -c < "$f" 2>/dev/null || echo 0)
+            echo "| 📄 \`$f\` | ${size} bytes |"
+          done)
+
+          ---
+          > ✅ 报告生成完成
+          EOF

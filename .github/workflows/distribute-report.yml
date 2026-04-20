@@ -1,0 +1,56 @@
+name: Distribute Report Workflow
+
+# 【仓库1 专用】
+# 手动触发，负责：
+#   1. 生成独立版 report.yml（去掉 workflow_call）
+#   2. 向 repos.txt 里的每个目标仓库推机器人分支
+#   3. 自动创建 PR，目标分支 main
+# 目标仓库只负责评审后合并 PR，无需执行任何分发操作。
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: "PR 目标分支（目标仓库的保护分支）"
+        required: true
+        default: "main"
+        type: string
+      branch_prefix:
+        description: "机器人分支前缀"
+        required: true
+        default: "bot/report-sync"
+        type: string
+      repo_filter:
+        description: "可选：只处理指定仓库（逗号分隔，如 test3,test4）"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  distribute:
+    name: Generate & Open PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout control repo
+        uses: actions/checkout@v4
+
+      - name: Verify tools
+        run: |
+          gh --version
+          git --version
+          python3 --version
+
+      - name: Run distribution
+        env:
+          GH_TOKEN: ${{ secrets.REPORT_SYNC_TOKEN }}
+          ORG: coder-HDY
+          BASE_BRANCH: ${{ inputs.base_branch }}
+          BRANCH_PREFIX: ${{ inputs.branch_prefix }}
+          REPO_FILTER: ${{ inputs.repo_filter }}
+        run: |
+          chmod +x cicd/scripts/generate-report.sh cicd/scripts/distribute-report.sh
+          cicd/scripts/distribute-report.sh
