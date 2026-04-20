@@ -110,15 +110,14 @@ for repo in "${repos[@]}"; do
   git checkout -b "${SYNC_BRANCH}"
   mkdir -p .github/workflows
   cp "${SOURCE_WORKFLOW}" .github/workflows/report.yml
+  git add .github/workflows/report.yml
 
-  if git diff --quiet -- .github/workflows/report.yml; then
+  if git diff --cached --quiet -- .github/workflows/report.yml; then
     echo "No changes detected, skipping PR."
     echo "${full_repo}: SKIPPED(no changes)" >> "${summary_file}"
     popd >/dev/null
     continue
   fi
-
-  git add .github/workflows/report.yml
   git -c user.name="report-sync-bot" \
       -c user.email="report-sync-bot@users.noreply.github.com" \
       commit -m "${COMMIT_MESSAGE}"
