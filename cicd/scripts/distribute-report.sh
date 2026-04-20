@@ -107,6 +107,7 @@ for repo in "${repos[@]}"; do
   gh repo clone "${full_repo}" "${workdir}" -- --quiet
 
   pushd "${workdir}" >/dev/null
+  git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${full_repo}.git"
   git checkout -b "${SYNC_BRANCH}"
   mkdir -p .github/workflows
   cp "${SOURCE_WORKFLOW}" .github/workflows/report.yml
