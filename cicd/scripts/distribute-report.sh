@@ -9,8 +9,8 @@
 #   5. 无变更自动跳过
 #
 # 环境变量：
-#   GH_TOKEN       必须，Personal Access Token 或 GitHub App token
-#                  需要对目标仓库有 contents:write + pull_requests:write
+#   GH_TOKEN       必须，GitHub App installation token（由 workflow 注入）
+#                  需要对目标仓库有 contents:write + pull_requests:write + workflows:write
 #   ORG            组织名，默认 coder-HDY
 #   BASE_BRANCH    PR 目标分支，默认 main
 #   BRANCH_PREFIX  机器人分支前缀，默认 bot/report-sync

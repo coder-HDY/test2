@@ -38,6 +38,14 @@ jobs:
       - name: Checkout control repo
         uses: actions/checkout@v4
 
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.REPORT_SYNC_APP_ID }}
+          private-key: ${{ secrets.REPORT_SYNC_APP_PRIVATE_KEY }}
+          owner: coder-HDY
+
       - name: Verify tools
         run: |
           gh --version
@@ -46,7 +54,7 @@ jobs:
 
       - name: Run distribution
         env:
-          GH_TOKEN: ${{ secrets.REPORT_SYNC_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORG: coder-HDY
           BASE_BRANCH: ${{ inputs.base_branch }}
           BRANCH_PREFIX: ${{ inputs.branch_prefix }}
